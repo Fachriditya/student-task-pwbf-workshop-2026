@@ -5,6 +5,7 @@ use App\Http\Controllers\BukuController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -14,9 +15,7 @@ Auth::routes();
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/dashboard', function () {      
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/book/index', [BookController::class, 'index'])->name('book.index');
     Route::get('/book/create', [BookController::class, 'create'])->name('book.create');
     Route::post('/book/store', [BookController::class, 'store'])->name('book.store');
