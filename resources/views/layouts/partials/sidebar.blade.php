@@ -14,22 +14,22 @@
         <i class="mdi mdi-bookmark-check text-success nav-profile-badge"></i>
       </a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{{ url('/dashboard') }}">
+    <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+      <a class="nav-link" href="{{ route('dashboard') }}">
         <span class="menu-title">Dashboard</span>
-        <i class="mdi mdi-home menu-icon"></i>   
+        <i class="mdi mdi-home menu-icon"></i>
       </a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{{ url('/category/index') }}">
-        <span class="menu-title">Category</span>
-        <i class="mdi mdi-shape menu-icon"></i>
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{{ url('/book/index') }}">
-        <span class="menu-title">Book</span>
+    <li class="nav-item {{ request()->routeIs(['book.index', 'book.create', 'book.store']) ? 'active' : '' }}">
+      <a class="nav-link" href="{{ route('book.index') }}">
+        <span class="menu-title">Buku</span>
         <i class="mdi mdi-book-open-page-variant menu-icon"></i>
+      </a>
+    </li>
+    <li class="nav-item {{ request()->routeIs(['category.index', 'category.create', 'category.store']) ? 'active' : '' }}">
+      <a class="nav-link" href="{{ route('category.index') }}">
+        <span class="menu-title">Kategori</span>
+        <i class="mdi mdi-format-list-bulleted menu-icon"></i>
       </a>
     </li>
   </ul>
