@@ -31,6 +31,13 @@
         <span class="menu-title">Kategori</span>
         <i class="mdi mdi-format-list-bulleted menu-icon"></i>
       </a>
+    </li> 
+    <li class="nav-item {{ request()->routeIs(['barang.index', 'barang.create', 'barang.store']) ? 'active' : '' }}">
+      <a class="nav-link" href="{{ route('barang.index') }}">
+        <span class="menu-title">Barang UMKM</span>
+        <i class="mdi mdi-tag-multiple menu-icon"></i>
+      </a>
+    </li>
     <li class="nav-item {{ request()->routeIs('pdf.*') ? 'active' : '' }}">
       <a class="nav-link" data-bs-toggle="collapse" href="#pdfMenu" aria-expanded="false">
         <span class="menu-title">Generate PDF</span>

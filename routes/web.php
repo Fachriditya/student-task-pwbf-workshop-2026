@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\BarangController;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -28,14 +29,24 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
     Route::get('/book', [BookController::class, 'index'])->name('book.index');
     Route::get('/book/create', [BookController::class, 'create'])->name('book.create');
     Route::post('/book', [BookController::class, 'store'])->name('book.store');
+
     Route::get('/category', [CategoryController::class, 'index'])->name('category.index');
     Route::get('/category/create', [CategoryController::class, 'create'])->name('category.create');
     Route::post('/category', [CategoryController::class, 'store'])->name('category.store');
+
     Route::get('/pdf/sertifikat', [PdfController::class, 'certificate'])->name('pdf.sertifikat');
     Route::get('/pdf/undangan', [PdfController::class, 'invitation'])->name('pdf.undangan');
 
+    Route::get('/barang', [BarangController::class, 'index'])->name('barang.index');
+    Route::get('/barang/create', [BarangController::class, 'create'])->name('barang.create');
+    Route::post('/barang', [BarangController::class, 'store'])->name('barang.store');
+    Route::post('/barang/print', [BarangController::class, 'print'])->name('barang.print');
+
 });
 Auth::routes();
+
+
