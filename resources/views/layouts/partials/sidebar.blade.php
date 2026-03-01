@@ -31,6 +31,21 @@
         <span class="menu-title">Kategori</span>
         <i class="mdi mdi-format-list-bulleted menu-icon"></i>
       </a>
+    <li class="nav-item {{ request()->routeIs('pdf.*') ? 'active' : '' }}">
+      <a class="nav-link" data-bs-toggle="collapse" href="#pdfMenu" aria-expanded="false">
+        <span class="menu-title">Generate PDF</span>
+        <i class="mdi mdi-file-pdf-box menu-icon"></i>
+      </a>
+      <div class="collapse" id="pdfMenu">
+        <ul class="nav flex-column sub-menu">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ route('pdf.sertifikat') }}">Sertifikat</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ route('pdf.undangan') }}">Undangan</a>
+          </li>
+        </ul>
+      </div>
     </li>
   </ul>
 </nav>
