@@ -11,8 +11,8 @@ table {
     table-layout: fixed;
 }
 td {
-    width: 3.8cm;
-    height: 1.8cm;
+    width: 32mm;
+    height: 18mm;
     border: 0.5px solid #000;
     text-align: center;
     vertical-align: middle;
