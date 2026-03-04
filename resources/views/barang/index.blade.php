@@ -59,7 +59,7 @@
                             <table class="table table-hover" id="tableBarang">
                                 <thead>
                                     <tr>
-                                        <th width="50 text-center">
+                                        <th width="50" class="text-center">
                                             <input type="checkbox" id="checkAll">
                                         </th>
                                         <th width="120">ID Barang</th>
@@ -84,7 +84,16 @@
                                         <td>Rp {{ number_format($barang->harga, 0, ',', '.') }}</td>
                                         <td>{{ \Carbon\Carbon::parse($barang->timestamp)->format('d M Y H:i') }}</td>
                                         <td>
-                                            <a href="#" class="btn btn-sm btn-inverse-info icon-btn"><i class="mdi mdi-pencil"></i></a>
+                                            <a href="{{ route('barang.edit', $barang->id_barang) }}" class="btn btn-sm btn-inverse-info">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </a>
+                                            <form action="{{ route('barang.destroy', $barang->id_barang) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-inverse-danger">
+                                                    <i class="mdi mdi-delete"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                     @endforeach
