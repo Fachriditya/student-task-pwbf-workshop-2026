@@ -3,15 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\Penjualan;
+use App\Models\PenjualanDetail;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BarangController extends Controller
 {
+    // --- CRUD DATA BARANG ---
+    
     public function index()
     {
         $barangs = Barang::orderBy('timestamp', 'desc')->get();
-        
         return view('barang.index', compact('barangs'));
     }
 
@@ -27,19 +30,26 @@ class BarangController extends Controller
             'harga' => 'required|integer|min:0',
         ]);
 
+        $today = date('ymd');
+        $lastBarang = Barang::where('id_barang', 'like', $today . '%')
+                            ->orderBy('id_barang', 'desc')
+                            ->first();
+
+        $lastCount = $lastBarang ? (int)substr($lastBarang->id_barang, -2) : 0;
+        $newId = $today . str_pad($lastCount + 1, 2, '0', STR_PAD_LEFT);
+
         Barang::create([
+            'id_barang' => $newId, 
             'nama' => $request->nama,
             'harga' => $request->harga,
         ]);
 
-        return redirect()->route('barang.index')
-            ->with('success', 'Barang berhasil ditambahkan!');
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil ditambahkan!');
     }
 
     public function edit($id)
     {
         $barang = Barang::findOrFail($id);
-        
         return view('barang.edit', compact('barang'));
     }
 
@@ -56,8 +66,7 @@ class BarangController extends Controller
             'harga' => $request->harga,
         ]);
 
-        return redirect()->route('barang.index')
-            ->with('success', 'Barang berhasil diupdate!');
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil diupdate!');
     }
 
     public function destroy($id)
@@ -65,9 +74,10 @@ class BarangController extends Controller
         $barang = Barang::findOrFail($id);
         $barang->delete();
 
-        return redirect()->route('barang.index')
-            ->with('success', 'Barang berhasil dihapus!');
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus!');
     }
+
+    // --- FITUR CETAK LABEL ---
 
     public function print(Request $request)
     {
@@ -80,9 +90,7 @@ class BarangController extends Controller
         }
 
         $barang = Barang::whereIn('id_barang', $selected)->get();
-
         $startIndex = (($y - 1) * 5) + ($x - 1);
-
         $labels = array_fill(0, 40, null);
         
         foreach ($barang as $i => $b) {
@@ -92,9 +100,75 @@ class BarangController extends Controller
             }
         }
 
-        $pdf = Pdf::loadView('barang.pdf', compact('labels'))
-                  ->setPaper('a4', 'portrait');
-
+        $pdf = Pdf::loadView('barang.pdf', compact('labels'))->setPaper('a4', 'portrait');
         return $pdf->stream('label_barang.pdf');
+    }
+
+    // --- LOGIKA AJAX & POS (STUDI KASUS MODUL) ---
+
+    public function kasir() 
+    {
+        return view('barang.kasir');
+    }
+
+    public function cariBarang(Request $request) 
+    {
+        // Gunakan trim untuk jaga-jaga ada spasi tak terlihat
+        $id = trim($request->id_barang);
+        
+        $barang = Barang::where('id_barang', $id)->first();
+
+        if ($barang) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'id_barang' => $barang->id_barang,
+                    'nama' => $barang->nama,
+                    'harga' => $barang->harga,
+                    // Tambahkan field lain jika perlu
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Barang dengan ID '.$id.' tidak ditemukan'
+        ], 404);
+    }
+
+    public function simpanTransaksi(Request $request) 
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Simulasi Transaksi Berhasil! (Data tidak disimpan ke DB)'
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman Barcode Scanner
+     */
+    public function scanner()
+    {
+        return view('barang.scanner');
+    }
+
+    /**
+     * Mengambil data barang berdasarkan ID dari Barcode Scanner (Respon JSON)
+     */
+    public function getBarangData($id)
+    {
+        $barang = Barang::where('id_barang', $id)->first();
+
+        if ($barang) {
+            return response()->json([
+                'success' => true,
+                'data' => $barang
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Barang dengan ID tersebut tidak ditemukan di database!'
+        ]);
     }
 }

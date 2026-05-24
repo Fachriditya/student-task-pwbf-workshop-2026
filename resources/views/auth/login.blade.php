@@ -90,7 +90,7 @@
                         <hr class="flex-grow-1">
                       </div>
 
-                      <div class="d-grid">
+                      <div class="mt-3 d-grid">
                         <a href="{{ route('auth.google') }}" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center">
                           <svg width="20" height="20" viewBox="0 0 20 20" class="me-2">
                             <path d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
