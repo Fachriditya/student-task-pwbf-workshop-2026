@@ -10,7 +10,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class BarangController extends Controller
 {
-    // --- CRUD DATA BARANG ---
     
     public function index()
     {
@@ -77,8 +76,6 @@ class BarangController extends Controller
         return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus!');
     }
 
-    // --- FITUR CETAK LABEL ---
-
     public function print(Request $request)
     {
         $selected = $request->ids;
@@ -104,7 +101,6 @@ class BarangController extends Controller
         return $pdf->stream('label_barang.pdf');
     }
 
-    // --- LOGIKA AJAX & POS (STUDI KASUS MODUL) ---
 
     public function kasir() 
     {
@@ -113,7 +109,6 @@ class BarangController extends Controller
 
     public function cariBarang(Request $request) 
     {
-        // Gunakan trim untuk jaga-jaga ada spasi tak terlihat
         $id = trim($request->id_barang);
         
         $barang = Barang::where('id_barang', $id)->first();
@@ -125,7 +120,6 @@ class BarangController extends Controller
                     'id_barang' => $barang->id_barang,
                     'nama' => $barang->nama,
                     'harga' => $barang->harga,
-                    // Tambahkan field lain jika perlu
                 ]
             ]);
         }
@@ -144,17 +138,11 @@ class BarangController extends Controller
         ]);
     }
 
-    /**
-     * Menampilkan halaman Barcode Scanner
-     */
     public function scanner()
     {
         return view('barang.scanner');
     }
 
-    /**
-     * Mengambil data barang berdasarkan ID dari Barcode Scanner (Respon JSON)
-     */
     public function getBarangData($id)
     {
         $barang = Barang::where('id_barang', $id)->first();

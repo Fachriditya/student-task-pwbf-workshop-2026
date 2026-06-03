@@ -80,7 +80,6 @@ class KantinController extends Controller
 
             $params = [
                 'transaction_details' => [
-                    // Tambahkan random_int atau time() agar ID selalu unik setiap kali klik
                     'order_id' => 'KANTIN-' . uniqid() . '-' . $pesanan->idpesanan, 
                     'gross_amount' => (int) $request->total,
                 ],
@@ -110,7 +109,6 @@ class KantinController extends Controller
 
     public function nota($id)
     {
-        // 1. Cek apakah datanya ada (Cek manual biar nggak blank)
         $pesanan = Pesanan::find($id);
         if (!$pesanan) {
             return "Error: Pesanan ID $id tidak ditemukan di database.";
@@ -121,7 +119,6 @@ class KantinController extends Controller
                     ->get();
 
         try {
-            // 2. Gunakan cara paling primitif (Tanpa method chaining)
             $qrCode = new \Endroid\QrCode\QrCode((string)$pesanan->idpesanan);
             
             $writer = new \Endroid\QrCode\Writer\PngWriter();
@@ -132,14 +129,9 @@ class KantinController extends Controller
             return view('kantin.nota', compact('pesanan', 'detail', 'qrUri'));
 
         } catch (\Exception $e) {
-            // 3. Kalau masih error, tampilkan pesannya di layar (Jangan kasih putih)
             return "Gagal membuat QR Code: " . $e->getMessage();
         }
     }
-
-    // ==============================================
-    // FITUR SCANNER VENDOR KANTIN (PRAKTIKUM 2)
-    // ==============================================
 
     public function scannerVendor()
     {
@@ -148,7 +140,6 @@ class KantinController extends Controller
 
    public function getPesananData($id)
     {
-        // 1. Cari data pesanan menggunakan kolom 'idpesanan'
         $pesanan = DB::table('pesanans')->where('idpesanan', $id)->first();
 
         if (!$pesanan) {
@@ -158,18 +149,14 @@ class KantinController extends Controller
             ]);
         }
 
-        // 2. Ambil detail menu (Join ke tabel menus menggunakan idmenu dan idpesanan)
-        // Kita gunakan kolom 'jumlah' sesuai dengan tabel aslimu
         $detailMenu = DB::table('detail_pesanans')
             ->join('menus', 'detail_pesanans.idmenu', '=', 'menus.idmenu')
             ->where('detail_pesanans.idpesanan', $id)
             ->select('menus.nama_menu', 'detail_pesanans.jumlah') 
             ->get();
 
-        // 3. Gabungkan nama menu jadi 1 kalimat
         $listMenu = [];
         foreach($detailMenu as $dm) {
-            // Kita gunakan $dm->jumlah di sini
             $listMenu[] = $dm->nama_menu . ' (x' . $dm->jumlah . ')';
         }
         $stringMenu = implode(', ', $listMenu);
@@ -178,11 +165,8 @@ class KantinController extends Controller
             $stringMenu = 'Tidak ada rincian menu';
         }
 
-        // 4. Ubah status_bayar yang tadinya angka (1) menjadi Teks
-        // Asumsi angka 1 artinya sudah bayar. Jika 2 atau 0 berarti belum.
         $statusText = ($pesanan->status_bayar == 1) ? 'LUNAS' : 'BELUM BAYAR';
 
-        // 5. Kembalikan response JSON ke alat Scanner
         return response()->json([
             'success' => true,
             'data' => [

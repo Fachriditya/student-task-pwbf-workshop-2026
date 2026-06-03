@@ -90,37 +90,38 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function() { // Tunggu sampai DOM HTML selesai dibuat oleh browser
         
         // 1. KETIKA KANTIN DIPILIH (Menampilkan Card Gallery)
-        $('#vendor_select').on('change', function() {
-            let id = $(this).val();
-            let gallery = $('#menu_gallery');
+        $('#vendor_select').on('change', function() { // Deteksi event saat pembeli memilih nama kantin dari dropdown
+            let id = $(this).val(); // Ambil ID Kantin yang dipilih
+            let gallery = $('#menu_gallery'); // Pilih area/wadah untuk menampung daftar menu
             
-            gallery.empty(); // Kosongkan etalase sebelumnya
+            gallery.empty(); // Kosongkan etalase (buang menu kantin sebelumnya jika ada)
             
-            if(id) {
-                // Munculkan efek loading
+            if(id) { // Jika ID kantin valid (bukan pilihan kosong "-- Sentuh --")
+                // Munculkan efek loading muter (spinner) sambil menunggu data dari server
                 gallery.html('<div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>');
                 
-                $.ajax({
-                    url: "{{ url('api/menu') }}/" + id,
-                    type: "GET",
-                    success: function(res) {
-                        gallery.empty(); // Bersihkan loading
+                $.ajax({ // Minta daftar menu kantin tersebut ke server
+                    url: "{{ url('api/menu') }}/" + id, // Alamat API ditambah ID kantin
+                    type: "GET", // Ambil data
+                    success: function(res) { // Saat server berhasil mengirim data menu (array 'res')
+                        gallery.empty(); // Bersihkan loading spinner tadi
                         
-                        if(res.length === 0) {
+                        if(res.length === 0) { // Kalau ternyata array dari server kosong (kantin belum punya menu)
                             gallery.append('<div class="col-12 text-center text-muted">Menu belum tersedia.</div>');
-                            return;
+                            return; // Hentikan proses di sini
                         }
 
-                        // Looping pembuatan Card untuk setiap menu
-                        res.forEach(m => {
+                        // Looping pembuatan Card untuk setiap menu yang dikirim server
+                        res.forEach(m => { 
                             // LOGIKA GAMBAR: Jika path_gambar kosong di database, pakai gambar dummy dari nama_menu
                             let imgUrl = m.path_gambar 
-                                        ? `{{ asset('storage') }}/${m.path_gambar}` 
-                                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(m.nama_menu)}&background=random&color=fff&size=200`;
+                                        ? `{{ asset('storage') }}/${m.path_gambar}` // Pakai foto asli kalau ada
+                                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(m.nama_menu)}&background=random&color=fff&size=200`; // Bikin foto dummy dari inisial huruf nama menu
                             
+                            // Rakit struktur HTML (Card Bootstrap) untuk satu menu
                             let card = `
                                 <div class="col-md-6 mb-3">
                                     <div class="card h-100 shadow-sm border-0">
@@ -138,68 +139,71 @@
                                         </div>
                                     </div>
                                 </div>`;
-                            gallery.append(card);
+                            gallery.append(card); // Suntikkan (tambahkan) card HTML yang sudah dirakit ini ke etalase layar
                         });
                     }
                 });
             } else {
+                // Jika user mengembalikan pilihan ke default "-- Pilih Kantin --", tampilkan peringatan
                 gallery.html('<div class="col-12 text-center text-muted"><i class="mdi mdi-food-variant mdi-48px"></i><p>Silakan pilih kantin terlebih dahulu.</p></div>');
             }
         });
 
         // 2. KETIKA TOMBOL "TAMBAH" DI CARD DIKLIK
-        $(document).on('click', '.btn-tambah-card', function() {
-            let idMenu = $(this).data('id');
-            let namaMenu = $(this).data('nama');
-            let harga = parseInt($(this).data('harga'));
+        // Pakai $(document).on(...) karena tombol ini dibuat secara dinamis oleh AJAX, bukan dari HTML bawaan
+        $(document).on('click', '.btn-tambah-card', function() { 
+            let idMenu = $(this).data('id'); // Tarik data tersembunyi ID Menu dari tombol yang ditekan
+            let namaMenu = $(this).data('nama'); // Tarik Nama
+            let harga = parseInt($(this).data('harga')); // Tarik Harga, pastikan jadi angka murni (Integer)
             
-            let existingRow = $(`#tabelKeranjang tbody tr[data-id="${idMenu}"]`);
+            // Cek apakah menu ini sudah ada di dalam tabel keranjang belanja
+            let existingRow = $(`#tabelKeranjang tbody tr[data-id="${idMenu}"]`); 
             
-            if (existingRow.length > 0) {
-                let inputQty = existingRow.find('.qty-input');
-                let newQty = parseInt(inputQty.val()) + 1;
-                inputQty.val(newQty);
-                let newSubtotal = newQty * harga;
-                existingRow.find('.subtotal').text('Rp ' + new Intl.NumberFormat('id-ID').format(newSubtotal));
-            } else {
-                let row = `<tr data-id="${idMenu}" data-harga="${harga}">
+            if (existingRow.length > 0) { // JIKA SUDAH ADA
+                let inputQty = existingRow.find('.qty-input'); // Cari kolom input jumlah (qty) di baris tersebut
+                let newQty = parseInt(inputQty.val()) + 1; // Tambahkan jumlah lamanya dengan 1
+                inputQty.val(newQty); // Masukkan jumlah baru ke input
+                let newSubtotal = newQty * harga; // Hitung subtotal baru (jumlah baru * harga asli)
+                existingRow.find('.subtotal').text('Rp ' + new Intl.NumberFormat('id-ID').format(newSubtotal)); // Update angka subtotal di layar
+            } else { // JIKA BELUM ADA (BARANG BARU)
+                let row = `<tr data-id="${idMenu}" data-harga="${harga}"> // Rakit baris tabel (tr) baru
                             <td>${namaMenu}</td>
                             <td><input type="number" class="form-control qty-input p-1 text-center" value="1" min="1"></td>
                             <td class="subtotal">Rp ${new Intl.NumberFormat('id-ID').format(harga)}</td>
                             <td><button class="btn btn-link text-danger p-0 btn-hapus"><i class="mdi mdi-close-circle mdi-24px"></i></button></td>
                           </tr>`;
-                $('#tabelKeranjang tbody').append(row);
+                $('#tabelKeranjang tbody').append(row); // Tambahkan ke tabel keranjang
             }
-            hitungTotalSemua();
-            $('#btnBayar').prop('disabled', false);
+            hitungTotalSemua(); // Panggil fungsi rekap total
+            $('#btnBayar').prop('disabled', false); // Nyalakan tombol "Bayar Sekarang" karena keranjang sudah terisi
         });
 
         // 3. UPDATE QTY MANUAL & HAPUS (Tetap Sama)
-        $(document).on('change', '.qty-input', function() {
-            let row = $(this).closest('tr');
-            let harga = parseInt(row.data('harga'));
-            let qty = parseInt($(this).val());
-            if(qty < 1) { $(this).val(1); qty = 1; }
-            row.find('.subtotal').text('Rp ' + new Intl.NumberFormat('id-ID').format(qty * harga));
-            hitungTotalSemua();
+        $(document).on('change', '.qty-input', function() { // Saat pembeli ngetik ganti jumlah (qty) manual di tabel keranjang
+            let row = $(this).closest('tr'); // Tangkap baris yang angkanya lagi diubah
+            let harga = parseInt(row.data('harga')); // Ambil memori harga asli dari baris tersebut
+            let qty = parseInt($(this).val()); // Ambil angka qty yang baru diketik
+            if(qty < 1) { $(this).val(1); qty = 1; } // Pencegahan: Kalau pembeli ketik minus atau 0, paksa balik ke angka 1
+            row.find('.subtotal').text('Rp ' + new Intl.NumberFormat('id-ID').format(qty * harga)); // Update subtotal
+            hitungTotalSemua(); // Update Grand Total
         });
 
-        $(document).on('click', '.btn-hapus', function() { 
-            $(this).closest('tr').remove(); 
-            hitungTotalSemua(); 
-            if ($('#tabelKeranjang tbody tr').length === 0) $('#btnBayar').prop('disabled', true);
+        $(document).on('click', '.btn-hapus', function() {  // Saat klik tombol x (Hapus)
+            $(this).closest('tr').remove();  // Hapus baris dari layar
+            hitungTotalSemua();  // Hitung ulang totalnya
+            if ($('#tabelKeranjang tbody tr').length === 0) $('#btnBayar').prop('disabled', true); // Kalau tabel jadi kosong melompong, matikan lagi tombol Bayar
         });
 
-        function hitungTotalSemua() {
-            let total = 0;
-            $('.subtotal').each(function() { total += parseInt($(this).text().replace(/[^\d]/g, '')); });
-            $('#totalBayar').text(new Intl.NumberFormat('id-ID').format(total));
+        function hitungTotalSemua() { // Fungsi tukang rekap angka keranjang
+            let total = 0; // Mulai dari 0
+            $('.subtotal').each(function() { total += parseInt($(this).text().replace(/[^\d]/g, '')); }); // Loop semua tulisan subtotal, hilangkan huruf "Rp" dan titiknya, lalu tambahkan ke 'total'
+            $('#totalBayar').text(new Intl.NumberFormat('id-ID').format(total)); // Cetak angka hasil akhirnya ke layar dengan format titik Rupiah
         }
 
         // 4. PROSES BAYAR MIDTRANS (Tetap Sama)
-        $('#btnBayar').on('click', function() {
-            let items = [];
-            $('#tabelKeranjang tbody tr').each(function() {
+        $('#btnBayar').on('click', function() { // Saat tombol "Bayar Sekarang" ditekan
+            let items = []; // Siapkan kotak kosong
+            $('#tabelKeranjang tbody tr').each(function() { // Loop isi keranjang dan masukkan satu-satu ke kotak
                 items.push({
                     id: $(this).data('id'),
                     qty: $(this).find('.qty-input').val(),
@@ -208,44 +212,44 @@
                 });
             });
 
-            let btn = $(this);
-            btn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Processing...');
+            let btn = $(this); // Simpan elemen tombol bayar
+            btn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Processing...'); // Kunci tombol agar tidak di-klik 2x (double submit), ubah teks jadi tulisan Processing
 
-            $.ajax({
+            $.ajax({ // Kirim keranjang belanja ke server Laravel untuk dicatat ke database dan meminta tiket (token) dari Midtrans
                 url: "{{ url('/api/proses-bayar') }}",
                 type: "POST",
-                data: {
+                data: { // Paket yang dikirim ke server
                     _token: "{{ csrf_token() }}",
-                    nama_guest: $('#guest_id').text().trim(),
-                    total: $('#totalBayar').text().replace(/[^\d]/g, ''),
-                    items: items
+                    nama_guest: $('#guest_id').text().trim(), // ID Tamu
+                    total: $('#totalBayar').text().replace(/[^\d]/g, ''), // Total bayar
+                    items: items // Rincian menu
                 },
-                success: function(res) {
-                    if(res.snap_token) {
+                success: function(res) { // Jika server dan Midtrans merespon dengan sukses
+                    if(res.snap_token) { // Kalau tiket (token) dari Midtrans dikirim
                         setTimeout(function() {
-                            window.snap.pay(res.snap_token, {
-                                onSuccess: function() { 
+                            window.snap.pay(res.snap_token, { // Panggil *library* bawaan Midtrans untuk membuka pop-up QRIS/Transfer di layar pembeli!
+                                onSuccess: function() { // Jika pembeli sudah bayar (misal nge-scan QRIS) dan lunas
                                     Swal.fire({
                                         title: 'Berhasil!',
                                         text: 'Pembayaran lunas, mengalihkan ke nota...',
                                         icon: 'success',
-                                        showConfirmButton: false,
+                                        showConfirmButton: false, // Hilangkan tombol OK
                                         timer: 1500 // Tunggu 1,5 detik biar user baca pesannya
                                     }).then(() => {
-                                        // Arahkan ke halaman nota membawa ID Pesanan dari server
+                                        // Arahkan otomatis pembeli ke halaman cetak/lihat nota yang berisi Barcode untuk discan ke kantin
                                         window.location.href = "{{ url('/kantin/nota') }}/" + res.idpesanan;
                                     }); 
                                 },
-                                onPending: function() { Swal.fire('Pending', 'Selesaikan pembayaran', 'info'); btn.prop('disabled', false).html('Bayar Sekarang'); },
-                                onError: function() { Swal.fire('Gagal', 'Pembayaran gagal', 'error'); btn.prop('disabled', false).html('Bayar Sekarang'); }
+                                onPending: function() { Swal.fire('Pending', 'Selesaikan pembayaran', 'info'); btn.prop('disabled', false).html('Bayar Sekarang'); }, // Jika pembeli menutup popup tapi berniat bayar nanti
+                                onError: function() { Swal.fire('Gagal', 'Pembayaran gagal', 'error'); btn.prop('disabled', false).html('Bayar Sekarang'); } // Jika error dari sisi bank/Midtrans
                             });
-                        }, 1000); 
+                        }, 1000); // Beri jeda 1 detik agar UI terasa lebih mulus sebelum popup midtrans keluar
                     }
                 },
-                error: function(xhr) {
+                error: function(xhr) { // Jika gagal di server kita (Laravel error)
                     let err = xhr.responseJSON ? xhr.responseJSON.error : "Error 500: Cek Console";
-                    Swal.fire('Error', err, 'error');
-                    btn.prop('disabled', false).html('<i class="mdi mdi-cash-multiple"></i> Bayar Sekarang');
+                    Swal.fire('Error', err, 'error'); // Munculkan popup merah
+                    btn.prop('disabled', false).html('<i class="mdi mdi-cash-multiple"></i> Bayar Sekarang'); // Nyalakan lagi tombol bayar
                 }
             });
         });

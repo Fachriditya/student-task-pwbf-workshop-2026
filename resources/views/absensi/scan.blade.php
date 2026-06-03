@@ -36,77 +36,77 @@
     // -------------------------------------------------------------
     // FUNGSI 1: MENGHIDUPKAN HARDWARE NFC DI HP
     // -------------------------------------------------------------
-    async function startScan() {
-        const statusText = document.getElementById('status');
-        const nfcIcon = document.getElementById('nfcIcon');
+    async function startScan() { // Mendeklarasikan fungsi asinkron bernama startScan agar bisa menggunakan perintah 'await'
+        const statusText = document.getElementById('status'); // Mengambil elemen HTML ber-ID 'status' untuk kita ubah teksnya nanti
+        const nfcIcon = document.getElementById('nfcIcon'); // Mengambil elemen ikon gambar NFC untuk mengubah warnanya
         
         // Cek dukungan Web NFC API
-        if (!('NDEFReader' in window)) {
-            Swal.fire('Gagal', 'Browser HP ini tidak mendukung Web NFC. Pastikan pakai Android Chrome versi terbaru!', 'error');
-            statusText.textContent = 'Fitur NFC tidak didukung.';
-            return;
+        if (!('NDEFReader' in window)) { // Mengecek apakah browser HP yang dipakai mendukung fitur pembaca NFC
+            Swal.fire('Gagal', 'Browser HP ini tidak mendukung Web NFC. Pastikan pakai Android Chrome versi terbaru!', 'error'); // Jika tidak dukung, munculkan popup error
+            statusText.textContent = 'Fitur NFC tidak didukung.'; // Ubah tulisan di layar menjadi tidak didukung
+            return; // Hentikan fungsi di sini, jangan lanjutkan ke kode bawah
         }
 
-        try {
+        try { // Blok percobaan: Coba jalankan kode di bawah ini, kalau error lempar ke blok 'catch'
             // Aktifkan Sensor
-            const ndef = new NDEFReader();
-            await ndef.scan();
+            const ndef = new NDEFReader(); // Membentuk objek pembaca NFC (NDEFReader)
+            await ndef.scan(); // Meminta izin ke HP dan menyalakan sensor NFC, sistem akan menunggu sampai sensor aktif
             
             // Animasi UI saat NFC Standby
-            statusText.innerHTML = '<span class="text-info fw-bold">Sensor Aktif! Tempelkan kartu di belakang HP...</span>';
-            nfcIcon.classList.remove('text-muted');
-            nfcIcon.classList.add('text-primary');
+            statusText.innerHTML = '<span class="text-info fw-bold">Sensor Aktif! Tempelkan kartu di belakang HP...</span>'; // Memberi tahu user bahwa sensor siap
+            nfcIcon.classList.remove('text-muted'); // Menghapus class warna abu-abu pada gambar ikon
+            nfcIcon.classList.add('text-primary'); // Menambahkan class warna biru pada gambar ikon
 
             // Event Listener: Dijalankan otomatis setiap kali ada kartu nempel
-            ndef.addEventListener('reading', async ({ serialNumber }) => {
+            ndef.addEventListener('reading', async ({ serialNumber }) => { // Menunggu kartu ditempel, lalu menangkap nomor serinya
                 // UI Feedback: Getar (jika diizinkan HP)
-                if ("vibrate" in navigator) navigator.vibrate(200);
+                if ("vibrate" in navigator) navigator.vibrate(200); // Memerintahkan HP untuk bergetar selama 200 milidetik sebagai tanda terbaca
 
-                statusText.innerHTML = `<span class="text-warning">Memproses Kartu: ${serialNumber}</span>`;
+                statusText.innerHTML = `<span class="text-warning">Memproses Kartu: ${serialNumber}</span>`; // Mengubah teks di layar untuk menampilkan nomor seri kartu
                 
                 // Lempar serial number ke fungsi AJAX Laravel
-                kirimDataKeServer(serialNumber);
+                kirimDataKeServer(serialNumber); // Memanggil fungsi kedua di bawah dengan membawa nomor seri kartu tadi
             });
 
-        } catch (error) {
-            console.error("NFC Error:", error);
-            Swal.fire('Error', 'Gagal menyalakan NFC. Pastikan fitur NFC di Settings HP menyala.', 'error');
-            statusText.textContent = 'Gagal mengakses sensor NFC.';
+        } catch (error) { // Blok penangkap error: Berjalan jika user menolak izin NFC atau hardware bermasalah
+            console.error("NFC Error:", error); // Mencetak error asli ke console browser untuk keperluan debugging
+            Swal.fire('Error', 'Gagal menyalakan NFC. Pastikan fitur NFC di Settings HP menyala.', 'error'); // Menampilkan pesan peringatan ke layar user
+            statusText.textContent = 'Gagal mengakses sensor NFC.'; // Mengubah status teks menjadi gagal
         }
     }
 
     // -------------------------------------------------------------
     // FUNGSI 2: KIRIM DATA KE DATABASE LARAVEL
     // -------------------------------------------------------------
-    function kirimDataKeServer(serial) {
-        $.ajax({
-            url: "{{ route('absensi.proses') }}",
-            type: "POST",
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                serialNumber: serial
+    function kirimDataKeServer(serial) { // Mendeklarasikan fungsi untuk mengirim data ke Laravel, membutuhkan 1 variabel (serial)
+        $.ajax({ // Memulai pengiriman data menggunakan AJAX (tanpa perlu reload halaman web)
+            url: "{{ route('absensi.proses') }}", // Menentukan tujuan pengiriman data, yaitu ke route Laravel bernama 'absensi.proses'
+            type: "POST", // Menggunakan metode POST karena kita mengirim data untuk diproses/disimpan
+            data: { // Kumpulan data yang dipaketkan untuk dikirim ke controller Laravel
+                _token: $('meta[name="csrf-token"]').attr('content'), // Menyertakan tiket keamanan (CSRF) agar Laravel tidak menolak kiriman ini
+                serialNumber: serial // Mengirim nomor seri kartu ke server dengan nama kolom 'serialNumber'
             },
-            success: function(res) {
-                if (res.success) {
+            success: function(res) { // Fungsi ini otomatis jalan jika Laravel berhasil merespon/membalas
+                if (res.success) { // Mengecek apakah balasan dari Laravel (res.success) bernilai true
                     // Jika Serial Number cocok dengan data Mahasiswa
-                    Swal.fire('Hadir!', 'Berhasil absen untuk: ' + res.nama, 'success');
-                    document.getElementById('hasil').innerHTML = `
+                    Swal.fire('Hadir!', 'Berhasil absen untuk: ' + res.nama, 'success'); // Menampilkan notifikasi centang hijau nama mahasiswa
+                    document.getElementById('hasil').innerHTML = ` // Menambahkan kotak hijau riwayat absen ke layar
                         <div class="alert alert-success shadow-sm">
                             <i class="mdi mdi-check-circle"></i> <strong>${res.nama}</strong> berhasil absen.
                         </div>
-                    ` + document.getElementById('hasil').innerHTML; // Tumpuk ke bawah
+                    ` + document.getElementById('hasil').innerHTML; // Menumpuk data yang baru di atas daftar riwayat yang lama
                 } else {
                     // Jika Serial Number tidak ada di database
-                    Swal.fire('Tidak Dikenali', res.message, 'warning');
-                    document.getElementById('hasil').innerHTML = `
+                    Swal.fire('Tidak Dikenali', res.message, 'warning'); // Menampilkan notifikasi silang merah karena kartu tidak dikenali
+                    document.getElementById('hasil').innerHTML = ` // Menambahkan kotak merah error ke layar
                         <div class="alert alert-danger shadow-sm">
                             <i class="mdi mdi-close-circle"></i> Kartu (<strong>${serial}</strong>) belum didaftarkan.
                         </div>
-                    ` + document.getElementById('hasil').innerHTML;
+                    ` + document.getElementById('hasil').innerHTML; // Menumpuk data yang baru di atas daftar riwayat yang lama
                 }
             },
-            error: function(xhr) {
-                Swal.fire('Error', 'Terjadi kesalahan saat menghubungi server.', 'error');
+            error: function(xhr) { // Fungsi ini otomatis jalan jika server mati, ngrok terputus, atau ada error kode 500
+                Swal.fire('Error', 'Terjadi kesalahan saat menghubungi server.', 'error'); // Menampilkan notifikasi koneksi gagal
             }
         });
     }

@@ -9,13 +9,10 @@ class Customer extends Model
 {
     use HasFactory;
 
-    // Nama tabel di database
     protected $table = 'customers';
     
-    // Primary key-nya (sesuai migrasi tadi)
     protected $primaryKey = 'idcustomer';
 
-    // Kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
         'nama', 
         'alamat', 
@@ -23,7 +20,7 @@ class Customer extends Model
         'kota', 
         'kecamatan', 
         'kodepos', 
-        'foto_blob', // Untuk Studi Kasus 3: Tambah 1 
-        'foto_path'  // Untuk Studi Kasus 3: Tambah 2 
+        'foto_blob',
+        'foto_path'
     ];
 }

@@ -94,72 +94,72 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function() { // Menunggu seluruh elemen HTML di halaman selesai dimuat agar tidak ada error elemen tidak ditemukan
         
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false
+        let html5QrcodeScanner = new Html5QrcodeScanner( // Membuat objek scanner baru dari library Html5QrcodeScanner
+            "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false // Konfigurasi: tempelkan ke elemen id="reader", baca dengan kecepatan 10 Frame/detik, ukuran kotak panduan scan 250x250px
         );
 
-        function onScanSuccess(decodedText, decodedResult) {
+        function onScanSuccess(decodedText, decodedResult) { // Mendeklarasikan fungsi yang akan otomatis berjalan SAAT kamera berhasil membaca barcode
             
             // 1. Mainkan Suara Beep
-            let beep = document.getElementById('beepSound');
-            if(beep) beep.play().catch(e => console.log('Autoplay audio ditahan browser'));
+            let beep = document.getElementById('beepSound'); // Cari elemen audio MP3 'beepSound' di HTML
+            if(beep) beep.play().catch(e => console.log('Autoplay audio ditahan browser')); // Putar suaranya. Perintah .catch dipakai untuk mencegah error di console jika browser memblokir audio otomatis
 
             // 2. Hentikan Scanner
-            html5QrcodeScanner.clear().then(() => {
-                $('#btnReset').removeClass('d-none');
+            html5QrcodeScanner.clear().then(() => { // Matikan kamera scanner seketika agar tidak terus-terusan men-scan barcode yang sama
+                $('#btnReset').removeClass('d-none'); // Munculkan tombol "Scan Ulang" dengan membuang class 'd-none' (display: none)
             });
 
             // 3. Ubah UI ke mode Loading
-            $('#standbyCard').addClass('d-none');
-            $('#resultCard').addClass('d-none');
-            $('#loadingData').removeClass('d-none');
+            $('#standbyCard').addClass('d-none'); // Sembunyikan ikon raksasa "Menunggu Scan..."
+            $('#resultCard').addClass('d-none'); // Sembunyikan tabel hasil (berjaga-jaga jika sebelumnya ada hasil pencarian lain)
+            $('#loadingData').removeClass('d-none'); // Munculkan animasi bulat muter (spinner) loading
 
             // 4. Proses AJAX
-            $.ajax({
-                url: "/barang/api/scan/" + decodedText,
-                type: "GET",
-                success: function(response) {
-                    $('#loadingData').addClass('d-none');
+            $.ajax({ // Kirim data hasil scan kamera ke server Laravel
+                url: "/barang/api/scan/" + decodedText, // Alamat tujuan URL-nya, langsung disambung dengan teks barcode hasil scan (decodedText)
+                type: "GET", // Pakai metode GET karena kita hanya meminta informasi dari server
+                success: function(response) { // Jika server merespons data dengan sukses
+                    $('#loadingData').addClass('d-none'); // Matikan (sembunyikan) animasi loading
                     
-                    if(response.success) {
+                    if(response.success) { // Jika data barang yang dicari ADA di database
                         // Tampilkan hasil ke tabel
-                        $('#resId').text(response.data.id_barang);
-                        $('#resNama').text(response.data.nama);
+                        $('#resId').text(response.data.id_barang); // Ganti teks '-' pada kolom ID menjadi kode barang asli dari server
+                        $('#resNama').text(response.data.nama); // Ganti teks kolom nama
                         
                         // Format angka ke Rupiah dengan Intl.NumberFormat (Sama dengan Kasir)
-                        let hargaRupiah = new Intl.NumberFormat('id-ID').format(response.data.harga);
-                        $('#resHarga').text("Rp " + hargaRupiah);
+                        let hargaRupiah = new Intl.NumberFormat('id-ID').format(response.data.harga); // Format angka ribuan, contoh: 50000 -> 50.000
+                        $('#resHarga').text("Rp " + hargaRupiah); // Tampilkan ke layar dengan tambahan 'Rp' di depannya
                         
-                        $('#resultCard').removeClass('d-none');
+                        $('#resultCard').removeClass('d-none'); // Munculkan kerangka tabel hasil yang berisi data di atas
 
                         // Notifikasi Toast dari SweetAlert
-                        Swal.fire({
+                        Swal.fire({ // Panggil pop-up notifikasi
                             title: 'Berhasil!',
                             text: 'Barang ditemukan',
-                            icon: 'success',
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 2000
+                            icon: 'success', // Ikon centang
+                            toast: true, // Aktifkan mode toast (bentuknya kecil memanjang, bukan pop-up kotak di tengah layar)
+                            position: 'top-end', // Posisikan toast di sudut kanan atas
+                            showConfirmButton: false, // Hilangkan tombol OK
+                            timer: 2000 // Otomatis hilang sendiri setelah 2 detik
                         });
                     } else {
                         // Kembali ke tampilan Standby dan munculkan Error Swal
-                        $('#standbyCard').removeClass('d-none');
-                        Swal.fire('Tidak Ditemukan!', response.message, 'warning');
+                        $('#standbyCard').removeClass('d-none'); // Jika barang TIDAK ADA, kembalikan layar ke mode Standby
+                        Swal.fire('Tidak Ditemukan!', response.message, 'warning'); // Tampilkan pop-up peringatan kuning
                     }
                 },
-                error: function() {
-                    $('#loadingData').addClass('d-none');
-                    $('#standbyCard').removeClass('d-none');
-                    Swal.fire('Error!', 'Terjadi kesalahan saat menghubungi server.', 'error');
+                error: function() { // Jika server mati atau ada error koneksi internet
+                    $('#loadingData').addClass('d-none'); // Sembunyikan loading
+                    $('#standbyCard').removeClass('d-none'); // Kembali ke mode Standby
+                    Swal.fire('Error!', 'Terjadi kesalahan saat menghubungi server.', 'error'); // Tampilkan pop-up silang merah
                 }
             });
         }
 
         // Jalankan scanner
-        html5QrcodeScanner.render(onScanSuccess);
+        html5QrcodeScanner.render(onScanSuccess); // Perintah pamungkas untuk menyalakan modul kamera ke layar, dan mengikat fungsi "onScanSuccess" sebagai penerima hasilnya
     });
 </script>
 @endsection

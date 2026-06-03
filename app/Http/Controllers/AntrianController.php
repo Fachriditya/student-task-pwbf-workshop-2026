@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Cache;
 
 class AntrianController extends Controller
 {
-    // ==============================================
-    // 1. AREA GUEST (PENDAFTARAN CEPAT VIA AJAX)
-    // ==============================================
+
     public function daftarCepat(Request $request)
     {
         $nomorTerakhir = Cache::get('antrian_nomor_terakhir', 0);
@@ -33,7 +31,6 @@ class AntrianController extends Controller
         ]);
     }
 
-    // Fungsi khusus untuk menyuplai data ke Dashboard Admin tanpa memblokir server
     public function apiData()
     {
         return response()->json([
@@ -44,32 +41,26 @@ class AntrianController extends Controller
         ]);
     }
 
-    // ==============================================
-    // 2. AREA ADMIN (LOKET KASIR)
-    // ==============================================
     public function admin()
     {
         return view('antrian.admin');
     }
 
-    // --- FUNGSI GABUNGAN: SELESAIKAN YANG LAMA, PANGGIL YANG BARU ---
     public function panggilSelesai(Request $request)
     {
         $sekarang = Cache::get('antrian_sekarang');
         $diproses = false;
 
-        // 1. Amankan dulu pesanan SEKARANG ke tabel Selesai
         if ($sekarang) {
             $sekarang['status'] = 'selesai';
             $selesai = Cache::get('antrian_selesai', []);
             $selesai[] = $sekarang;
             Cache::put('antrian_selesai', $selesai);
             
-            Cache::forget('antrian_sekarang'); // Kosongkan layar utama
+            Cache::forget('antrian_sekarang');
             $diproses = true;
         }
 
-        // 2. Cek apakah masih ada antrean di dapur
         $menunggu = Cache::get('antrian_menunggu', []);
         if (!empty($menunggu)) {
             $dipanggil = array_shift($menunggu);
@@ -78,7 +69,6 @@ class AntrianController extends Controller
             return response()->json(['success' => true]);
         }
 
-        // 3. Jika dapur kosong tapi kita baru saja menyelesaikan pesanan (Kasus Panggil Ulang)
         if ($diproses) {
             return response()->json(['success' => true, 'message' => 'Pesanan selesai. Antrian habis.']);
         }
@@ -91,7 +81,6 @@ class AntrianController extends Controller
         $sekarang = Cache::get('antrian_sekarang');
         $diproses = false;
 
-        // 1. Amankan pesanan SEKARANG ke tabel Terlewat
         if ($sekarang) {
             $sekarang['status'] = 'terlewat';
             $terlewat = Cache::get('antrian_terlewat', []);
@@ -102,7 +91,6 @@ class AntrianController extends Controller
             $diproses = true;
         }
 
-        // 2. Cek apakah masih ada antrean di dapur
         $menunggu = Cache::get('antrian_menunggu', []);
         if (!empty($menunggu)) {
             $dipanggil = array_shift($menunggu);
@@ -111,7 +99,6 @@ class AntrianController extends Controller
             return response()->json(['success' => true]);
         }
 
-        // 3. Jika dapur kosong tapi kita baru saja melewati pesanan
         if ($diproses) {
             return response()->json(['success' => true, 'message' => 'Pesanan dilewati. Antrian habis.']);
         }
@@ -140,23 +127,15 @@ class AntrianController extends Controller
         return response()->json(['success' => false, 'message' => 'Data tidak ditemukan']);
     }
 
-    // ==============================================
-    // 3. AREA PAPAN TV (RUANG MAKAN / PUBLIK)
-    // ==============================================
     public function papan()
     {
         return view('antrian.papan');
     }
 
-    // ==============================================
-    // 4. MESIN RADIO SSE (STREAMING REAL-TIME)
-    // ==============================================
     public function stream(Request $request)
     {
-        // Mencegah PHP timeout pada koneksi yang panjang
         set_time_limit(0); 
 
-        // KUNCI RAHASIA: Lepaskan sesi agar tombol AJAX tidak nge-lag/ngantre!
         session_write_close();
 
         return response()->stream(function () {
@@ -170,7 +149,6 @@ class AntrianController extends Controller
                     'selesai'  => Cache::get('antrian_selesai', [])
                 ];
 
-                // Aturan format SSE
                 echo 'event: update-antrian' . PHP_EOL;
                 echo 'data: ' . json_encode($data) . PHP_EOL;
                 echo PHP_EOL; 

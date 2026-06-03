@@ -3,24 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\LokasiToko; // Memanggil model tabel toko kita
+use App\Models\LokasiToko;
 
 class LokasiTokoController extends Controller
 {
-    // Menampilkan daftar toko
+    
     public function index()
     {
         $tokos = LokasiToko::all();
         return view('toko.index', compact('tokos'));
     }
 
-    // Menampilkan form tambah toko baru
     public function create()
     {
         return view('toko.create');
     }
 
-    // Menyimpan data toko ke database
     public function store(Request $request)
     {
         $request->validate([
@@ -36,26 +34,20 @@ class LokasiTokoController extends Controller
         return redirect()->route('toko.index')->with('success', 'Data Toko berhasil ditambahkan!');
     }
 
-    // Halaman khusus untuk print barcode toko
     public function cetakBarcode($barcode)
     {
         $toko = LokasiToko::findOrFail($barcode);
         return view('toko.barcode', compact('toko'));
     }
-    // ==============================================
-    // FITUR KUNJUNGAN SALES (MODUL 9)
-    // ==============================================
 
-    // Menampilkan halaman alat tempur sales
     public function kunjungan()
     {
         return view('toko.kunjungan');
     }
 
-    // Fungsi Rahasia: Menghitung jarak bumi dalam satuan METER (Sesuai Lampiran 2)
     private function haversine($lat1, $lng1, $lat2, $lng2) 
     {
-        $R = 6371000; // Radius bumi dalam meter
+        $R = 6371000;
         $dLat = deg2rad($lat2 - $lat1);
         $dLng = deg2rad($lng2 - $lng1);
         $a = sin($dLat / 2) * sin($dLat / 2) +
@@ -63,10 +55,9 @@ class LokasiTokoController extends Controller
              sin($dLng / 2) * sin($dLng / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         
-        return round($R * $c, 2); // Bulatkan 2 angka desimal
+        return round($R * $c, 2);
     }
 
-    // Memproses data absen sales
     public function prosesKunjungan(Request $request)
     {
         $barcode_scan = $request->barcode;
@@ -74,21 +65,17 @@ class LokasiTokoController extends Controller
         $lng_sales = $request->lng_sales;
         $acc_sales = $request->acc_sales;
 
-        // 1. Cari data toko di database
         $toko = LokasiToko::where('barcode', $barcode_scan)->first();
 
         if (!$toko) {
             return response()->json(['success' => false, 'message' => 'Barcode Toko Tidak Dikenal!']);
         }
 
-        // 2. Hitung Jarak Aktual (Sales vs Toko)
         $jarak_aktual = $this->haversine($toko->latitude, $toko->longitude, $lat_sales, $lng_sales);
 
-        // 3. Hitung Batas Toleransi (Threshold Efektif sesuai Lampiran 3)
-        $threshold_dasar = 300; // Bos minta toleransi dasar 300 meter
+        $threshold_dasar = 300;
         $threshold_efektif = $threshold_dasar + $toko->accuracy + $acc_sales;
 
-        // 4. Pengambilan Keputusan
         if ($jarak_aktual <= $threshold_efektif) {
             $status = 'DITERIMA';
             $pesan = "Kunjungan Sah! Jarak: {$jarak_aktual}m (Maks: {$threshold_efektif}m)";

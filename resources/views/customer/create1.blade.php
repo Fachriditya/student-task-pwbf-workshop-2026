@@ -121,66 +121,66 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-$(document).ready(function() {
-    let video = document.getElementById('webcam');
-    let canvas = document.getElementById('canvas');
-    let snapResult = document.getElementById('snap_result');
-    let base64Foto = "";
+$(document).ready(function() { // Tunggu sampai struktur HTML (DOM) halaman selesai diload
+    let video = document.getElementById('webcam'); // Ambil elemen video yang akan memutar tangkapan kamera langsung
+    let canvas = document.getElementById('canvas'); // Ambil elemen canvas, ini berfungsi ibarat 'kanvas lukis' tersembunyi tempat foto ditempel sesaat
+    let snapResult = document.getElementById('snap_result'); // Ambil elemen img (gambar) untuk menampilkan hasil jepretan di layar kanan
+    let base64Foto = ""; // Siapkan variabel string kosong untuk menampung data gambar mentah (format base64)
 
     // 1. HIDUPKAN KAMERA VIA HTML5 API 
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => { video.srcObject = stream; })
-        .catch(err => Swal.fire('Error', 'Izin kamera ditolak!', 'error'));
+    navigator.mediaDevices.getUserMedia({ video: true }) // Minta izin ke browser untuk memakai kamera (hanya video, tanpa mic)
+        .then(stream => { video.srcObject = stream; }) // Jika diizinkan, masukkan pancaran video (stream) ke dalam elemen <video> di layar agar gambarnya muncul
+        .catch(err => Swal.fire('Error', 'Izin kamera ditolak!', 'error')); // Jika ditolak (atau gak ada kamera), munculkan alert error
 
     // 2. AMBIL SNAPSHOT 
-    $('#btnCapture').on('click', function() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        base64Foto = canvas.toDataURL('image/png');
-        snapResult.src = base64Foto;
+    $('#btnCapture').on('click', function() { // Jika tombol "Ambil Foto" merah di klik
+        canvas.width = video.videoWidth; // Set ukuran lebar kanvas lukis biar persis sama dengan ukuran video
+        canvas.height = video.videoHeight; // Set ukuran tinggi kanvas lukis persis sama dengan video
+        canvas.getContext('2d').drawImage(video, 0, 0); // "Cetak" atau gambar diam (pause) video saat ini ke atas kanvas dari kordinat 0,0
+        base64Foto = canvas.toDataURL('image/png'); // Ubah gambar di kanvas tadi menjadi teks string super panjang (format base64 tipe PNG) lalu simpan ke variabel
+        snapResult.src = base64Foto; // Tempelkan teks string panjang tadi ke elemen <img src="..."> supaya kelihatan sebagai gambar di layar
     });
 
     // 3. GUNAKAN FOTO KE FORM 
-    $('#btnUsePhoto').on('click', function() {
-        if(base64Foto) {
-            $('#preview_foto').attr('src', base64Foto).show();
-            $('#placeholder').hide();
-            $('#foto_data').val(base64Foto);
+    $('#btnUsePhoto').on('click', function() { // Jika tombol "Simpan Foto" hijau di klik untuk menutup modal
+        if(base64Foto) { // Pastikan variabelnya ada isinya (kasir udah nge-klik tombol ambil foto merah)
+            $('#preview_foto').attr('src', base64Foto).show(); // Pasang string gambar ke area Pratinjau Foto di form utama, lalu tampilkan
+            $('#placeholder').hide(); // Sembunyikan ikon abu-abu bulat default di area pratinjau form
+            $('#foto_data').val(base64Foto); // KUNCI BLOB: Masukkan string gambar super panjang tersebut ke dalam tag <input type="hidden"> agar ikut terkirim ke Laravel pas disubmit!
         }
     });
 
     // 4. LOGIKA WILAYAH (SAMA DENGAN CODINGANMU TADI)
-    function loadWilayah(url, targetId) {
-        $.get(url, function(res) {
-            let dropdown = $(targetId);
-            dropdown.prop('disabled', false).find('option:not(:first)').remove();
-            res.data.forEach(item => dropdown.append(`<option value="${item.name}">${item.name}</option>`));
+    function loadWilayah(url, targetId) { // Fungsi pembuat request AJAX untuk mengambil data daerah
+        $.get(url, function(res) { // Minta data ke server (API Wilayah) menggunakan tipe request GET
+            let dropdown = $(targetId); // Pilih elemen select (dropdown) yang dituju
+            dropdown.prop('disabled', false).find('option:not(:first)').remove(); // Nyalakan kembali dropdown-nya, lalu hapus semua opsi lama (kecuali opsi pertama "Pilih...")
+            res.data.forEach(item => dropdown.append(`<option value="${item.name}">${item.name}</option>`)); // Looping data wilayah dari server, lalu masukkan jadi opsi-opsi baru ke dropdown
         });
     }
 
-    loadWilayah("{{ route('wilayah.provinsi') }}", "#provinsi");
+    loadWilayah("{{ route('wilayah.provinsi') }}", "#provinsi"); // Panggil fungsi di atas secara otomatis saat halaman baru dibuka untuk mengisi dropdown provinsi
 
-    $('#provinsi').on('change', function() {
-        let name = $(this).val();
-        $('#kota, #kecamatan').prop('disabled', true).val('');
-        if(name) loadWilayah("/wilayah/kota-by-name/" + name, "#kota");
+    $('#provinsi').on('change', function() { // Jika kasir merubah pilihan di dropdown provinsi
+        let name = $(this).val(); // Ambil nama provinsi yang baru dipilih
+        $('#kota, #kecamatan').prop('disabled', true).val(''); // Reset dan matikan dulu dropdown kota & kecamatan
+        if(name) loadWilayah("/wilayah/kota-by-name/" + name, "#kota"); // Jika provinsi valid dipilih, panggil AJAX untuk cari daftar Kota yang ada di provinsi tersebut, lalu masukkan ke dropdown "#kota"
     });
 
     // 5. SIMPAN DATA (AJAX) 
-    $('#formCustomer1').on('submit', function(e) {
-        e.preventDefault();
-        if(!$('#foto_data').val()) {
-            return Swal.fire('Opps', 'Ambil foto dulu dong!', 'warning');
+    $('#formCustomer1').on('submit', function(e) { // Cegat aksi saat form disubmit
+        e.preventDefault(); // Hentikan aksi refresh/reload bawaan HTML, kita bakal pakai AJAX!
+        if(!$('#foto_data').val()) { // Cek input hidden foto, kalau string base64-nya kosong
+            return Swal.fire('Opps', 'Ambil foto dulu dong!', 'warning'); // Tolak proses submit dan munculkan notif
         }
 
-        $.ajax({
-            url: "{{ route('customer.store') }}",
-            type: "POST",
-            data: $(this).serialize(),
-            success: function(res) {
-                Swal.fire('Berhasil!', 'Data Customer (BLOB) tersimpan.', 'success').then(() => {
-                    window.location.href = "{{ route('customer.index') }}";
+        $.ajax({ // Eksekusi pengiriman form menggunakan AJAX
+            url: "{{ route('customer.store') }}", // Tuju route simpan data Laravel
+            type: "POST", // Pakai mode POST untuk create data
+            data: $(this).serialize(), // Ambil SEMUA data di dalam <form> (termasuk string gambar panjang di foto_data) lalu bungkus jadi format query string
+            success: function(res) { // Jika server membalas dengan status sukses
+                Swal.fire('Berhasil!', 'Data Customer (BLOB) tersimpan.', 'success').then(() => { // Tampilkan pop up centang
+                    window.location.href = "{{ route('customer.index') }}"; // Setelah diklik OK, pindah otomatis ke halaman Daftar Customer
                 });
             }
         });

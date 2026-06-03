@@ -7,9 +7,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PdfController extends Controller
 {
-    /**
-     * Generate Sertifikat (Landscape A4)
-     */
     public function certificate()
     {
         $data = [
@@ -25,9 +22,6 @@ class PdfController extends Controller
         return $pdf->download('sertifikat.pdf');
     }
 
-    /**
-     * Generate Undangan (Portrait A4 + Header)
-     */
     public function invitation()
     {
         $data = [
